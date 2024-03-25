@@ -22,6 +22,26 @@ usage() {
 }
 
 #######################################
+# Header start & end script.
+# Arguments: "start" or "end"
+# Outputs: None
+#######################################
+header() {
+  case $1 in
+  "start")
+    echo ""
+    echo "//////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
+    echo "////////// $(basename "$0") started... \\\\\\\\\\"
+    ;;
+  "end")
+    echo "\\\\\\\\\\ $(basename "$0") finished... //////////"
+    echo "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////"
+    echo ""
+    ;;
+  esac
+}
+
+#######################################
 # Check if sudo is used.
 # Arguments: None
 # Outputs: None
@@ -57,25 +77,30 @@ bashrc_conf() {
     ;;
   esac
 
-  # Backup previous .bashrc file
-  if [[ -f "$HOME_BASHRC" && ! -f "$HOME_BASHRC.bk" ]]; then
-    echo "--> Backup previous $BASHRC."
-    cp -v "   $HOME_BASHRC" "$HOME_BASHRC.bk"
-  else
+  # Test .bashrc or .bashrc.bak file exist
+  if [[ ! -f "$HOME_BASHRC" || -f "$HOME_BASHRC.bk" ]]; then
     echo "--> No $BASHRC or existing backup found in $HOME."
+    return 1
   fi
+
+  # Backup previous .bashrc file
+  echo "--> Backup previous $BASHRC."
+  cp -v "$HOME_BASHRC" "$HOME_BASHRC.bak"
 
   # Update .bashrc file
   echo "--> Updating current $BASHRC."
-  sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' $BASHRC
+  sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' "$HOME_BASHRC"
+  echo "--> Updating current $BASHRC."
+  sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' "$HOME_BASHRC"
   {
     echo ""
     echo ""
     echo "# Custom part.:"
+    echo "set completion-ignore-case on"
     # shellcheck disable=SC2028
     echo 'PS1="\[\e[0;32m\]\u@\h\[\e[0;m\]:\[\e[1;35m\]\w\[\e[0;m\] \[\e[1;32m\] \$\[\e[0;m\] "'
-    echo "alias ll='ls -lah'"
     echo "alias ..='cd ..'"
+    echo "alias ll='ls -lah'"
   } >>"$HOME_BASHRC"
   echo "!!! To update prompt, use 'source $BASHRC'"
   echo ""
@@ -137,7 +162,7 @@ package_inst() {
 }
 
 #######################################
-# Uninstall actions, remove packages & .bashrc modification.
+# Uninstall script, remove packages & .bashrc modification.
 # Arguments: None
 # Outputs: None
 #######################################
@@ -168,20 +193,16 @@ main() {
     usage
     ;;
   -i | --install)
-    echo ""
-    echo "---------- $(basename "$0") installation started... ----------"
+    header "start"
     sudo_ceck
     bashrc_conf
     package_inst
-    echo "---------- $(basename "$0") installation finished... ----------"
-    echo ""
+    header "end"
     ;;
   -r | --remove)
-    echo ""
-    echo "---------- $(basename "$0") remove started... ----------"
+    header "start"
     remove
-    echo "---------- $(basename "$0") remove finished... ----------"
-    echo ""
+    header "end"
     ;;
   *)
     usage
