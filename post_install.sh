@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# Phenates; v0.1
-# Postinstall script, configure bashrc file, install package.
+# Phenates; v0.2
+# Postinstall script, configure bashrc file for user and root, install package.
+# Copy and unzip bash_script directory from github (wget https://github.com/phenates/bash_script/archive/refs/heads/master.zip)
 
 #Variables:
 BASHRC=".bashrc"
@@ -44,7 +45,7 @@ header() {
 }
 
 #######################################
-# Check if sudo is used.
+# Check if sudo.
 # Arguments: None
 # Outputs: None
 #######################################
@@ -60,21 +61,20 @@ sudo_ceck() {
 }
 
 #######################################
-# Prompt configuration, in .bashrc file.
+# User prompt configuration, in .bashrc file.
 # Arguments: None
 # Outputs: None
 #######################################
-bashrc_conf() {
-  ASKING="Configuration of .bashrc"
-  read -r -p ">>> $ASKING -> Continue [y]/[n] ?" yn
-  case $yn in
+user_bashrc_conf() {
+  read -r -p ">>> Configuration of user .bashrc -> Continue [y]/[n] ?"
+  case $REPLY in
   [yY]) ;;
   [nN])
-    echo "--> $ASKING canceled"
+    echo "--> Action canceled"
     return 1
     ;;
   *)
-    echo "Please answer yes or no."
+    echo "--> Please answer y or n."
     return 1
     ;;
   esac
@@ -86,24 +86,24 @@ bashrc_conf() {
   fi
 
   # Backup previous .bashrc file
-  echo "--> Backup previous $BASHRC."
-  cp -v "$HOME_BASHRC" "$HOME_BASHRC.bak"
+  echo "--> Backup previous $BASHRC to $HOME_BASHRC.bak."
+  cp "$HOME_BASHRC" "$HOME_BASHRC.bak"
 
   # Update .bashrc file
-  echo "--> Updating current $BASHRC."
-  sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' "$HOME_BASHRC"
   echo "--> Updating current $BASHRC."
   sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' "$HOME_BASHRC"
   {
     echo ""
     echo ""
     echo "# Custom part.:"
-    echo "export PATH=$HOME_BASHRC:$PATH"
-    echo "set completion-ignore-case on"
+    echo "export PATH=$HOME/bash_script:$PATH"
+    #echo "set completion-ignore-case on"
+    echo "bind -s 'set completion-ignore-case on'"
     # shellcheck disable=SC2028
     echo 'PS1="\[\e[0;32m\]\u@\h\[\e[0;m\]:\[\e[1;35m\]\w\[\e[0;m\] \[\e[1;32m\] \$\[\e[0;m\] "'
     echo "alias ..='cd ..'"
     echo "alias ll='ls -lah'"
+    echo "alias sys='systemctl'"
   } >>"$HOME_BASHRC"
   echo "!!! To update prompt, use 'source $BASHRC'"
   echo ""
@@ -137,12 +137,11 @@ script_install() {
 # Outputs: None
 #######################################
 package_inst() {
-  ASKING="Packages instalation"
-  read -r -p ">>> $ASKING -> Continue [y]/[n] ?" yn
-  case $yn in
+  read -r -p ">>> Packages instalation -> Continue [y]/[n] ?"
+  case $REPLY in
   [yY]) ;;
   [nN])
-    echo "--> $ASKING canceled"
+    echo "--> Packages instalation canceled"
     return 1
     ;;
   *)
@@ -198,7 +197,7 @@ main() {
   -i | --install)
     header "start"
     sudo_ceck
-    bashrc_conf
+    user_bashrc_conf
     package_inst
     header "end"
     ;;
