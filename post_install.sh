@@ -66,7 +66,7 @@ sudo_ceck() {
 # Outputs: None
 #######################################
 user_bashrc_conf() {
-  read -r -p ">>> Configuration of user .bashrc -> Continue [y]/[n] ?"
+  read -r -p ">>> Configuration of $USER .bashrc -> Continue [y]/[n] ?"
   case $REPLY in
   [yY]) ;;
   [nN])
@@ -169,13 +169,15 @@ package_inst() {
 # Outputs: None
 #######################################
 remove() {
-  if [[ -f "$HOME_BASHRC.bk" ]]; then
+  if [[ -f "$HOME_BASHRC.bak" ]]; then
     echo "--> $BASHRC restored"
-    cp -vf "$HOME_BASHRC.bk" "$HOME_BASHRC"
+    cp -vf "$HOME_BASHRC.bak" "$HOME_BASHRC"
     echo ""
-    echo "--> $HOME_BASHRC.bk deleted"
-    rm "$HOME_BASHRC.bk"
+    echo "--> $HOME_BASHRC.bak deleted"
+    rm "$HOME_BASHRC.bak"
     echo ""
+  else
+    echo "--> No $HOME_BASHRC.bak file found, $BASHRC restoration canceled"
   fi
   for i in "${PACKAGES[@]}"; do
     echo "--> Package $i remove"
@@ -195,14 +197,14 @@ main() {
     usage
     ;;
   -i | --install)
-    header "start"
+    header " Install start"
     sudo_ceck
     user_bashrc_conf
     package_inst
     header "end"
     ;;
   -r | --remove)
-    header "start"
+    header "Remove start"
     remove
     header "end"
     ;;
