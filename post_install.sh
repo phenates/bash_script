@@ -197,16 +197,16 @@ main() {
     usage
     ;;
   -i | --install)
-    header " Install start"
+    header " Install started"
     sudo_ceck
     user_bashrc_conf
     package_inst
-    header "end"
+    header "Install finished"
     ;;
   -r | --remove)
-    header "Remove start"
+    header "Remove started"
     remove
-    header "end"
+    header "Remove finished"
     ;;
   *)
     usage
