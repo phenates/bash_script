@@ -114,22 +114,22 @@ user_bashrc_conf() {
 # Arguments: None
 # Outputs: None
 #######################################
-script_install() {
-  ASKING="Script utils installation"
-  read -r -p ">>> $ASKING -> Continue [y]/[n] ?" yn
-  case $yn in
-  [yY]) ;;
-  [nN])
-    echo "--> $ASKING canceled"
-    return 1
-    ;;
-  *)
-    echo "Please answer yes or no."
-    return 1
-    ;;
-  esac
+# script_install() {
+#   ASKING="Script utils installation"
+#   read -r -p ">>> $ASKING -> Continue [y]/[n] ?" yn
+#   case $yn in
+#   [yY]) ;;
+#   [nN])
+#     echo "--> $ASKING canceled"
+#     return 1
+#     ;;
+#   *)
+#     echo "Please answer yes or no."
+#     return 1
+#     ;;
+#   esac
 
-}
+# }
 
 #######################################
 # Packages installation from $PACKAGES.
@@ -197,16 +197,16 @@ main() {
     usage
     ;;
   -i | --install)
-    header " Install started"
+    header "start"
     sudo_ceck
     user_bashrc_conf
     package_inst
-    header "Install finished"
+    header "end"
     ;;
   -r | --remove)
-    header "Remove started"
+    header "start"
     remove
-    header "Remove finished"
+    header "end"
     ;;
   *)
     usage
