@@ -30,12 +30,14 @@ header() {
   case $1 in
   "start")
     echo ""
+    echo ""
     echo "//////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     echo "////////// $(basename "$0") started... \\\\\\\\\\"
     ;;
   "end")
     echo "\\\\\\\\\\ $(basename "$0") finished... //////////"
     echo "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////"
+    echo ""
     echo ""
     ;;
   esac
@@ -96,6 +98,7 @@ bashrc_conf() {
     echo ""
     echo ""
     echo "# Custom part.:"
+    echo "export PATH=$HOME_BASHRC:$PATH"
     echo "set completion-ignore-case on"
     # shellcheck disable=SC2028
     echo 'PS1="\[\e[0;32m\]\u@\h\[\e[0;m\]:\[\e[1;35m\]\w\[\e[0;m\] \[\e[1;32m\] \$\[\e[0;m\] "'
