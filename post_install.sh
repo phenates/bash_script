@@ -32,12 +32,12 @@ header() {
   "start")
     echo ""
     echo ""
-    echo "//////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
-    echo "////////// $(basename "$0") started... \\\\\\\\\\"
+    echo -e "//////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
+    echo -e "////////// $(basename "$0") started... \\\\\\\\\\"
     ;;
   "end")
-    echo "\\\\\\\\\\ $(basename "$0") finished... //////////"
-    echo "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////"
+    echo -e "\\\\\\\\\\ $(basename "$0") finished... //////////"
+    echo -e "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////"
     echo ""
     echo ""
     ;;
@@ -96,7 +96,7 @@ user_bashrc_conf() {
     echo ""
     echo ""
     echo "# Custom part.:"
-    echo "export PATH=$HOME/bash_script:$PATH"
+    echo "export PATH='$HOME/bash_script:$PATH'"
     #echo "set completion-ignore-case on"
     echo "bind -s 'set completion-ignore-case on'"
     # shellcheck disable=SC2028
