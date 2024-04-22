@@ -140,11 +140,11 @@ sql_install() {
     wget -O /tmp/mysql-apt-config.deb $MYSQL_REPOSITOTY
     sudo apt install -y /tmp/mysql-apt-config.deb
     sudo apt update -y
-    info "--> Install $MYSQL_PACKAGE"
+    info "\n--> Install $MYSQL_PACKAGE"
     sudo apt install -y $MYSQL_PACKAGE
-    info "--> MySQL version:"
+    info "\n--> MySQL version:"
     mysql -v
-    info "--> MySQL status:"
+    info "\n--> MySQL status:"
     sudo systemctl status mysql
     ;;
   esac
