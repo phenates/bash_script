@@ -1,17 +1,32 @@
 #!/usr/bin/env bash
-#
-# Phenates; v0.1
-# LAMP stack installation script
 
-#Variables:
+#######################################
+# Script name : lamp_install.sh
+# Description : Install a LAMP stack.
+# Args        : option -i; -u; -h
+# Author      : Phenates
+# Date        : 2024-04
+# Version     : 0.1
+#######################################
+
+#######################################
+# Variables:
+#######################################
+# Config:
 PURPOSE="LAMP stack installation script"
+APACHE_PACKAGES="apache2 libapache2-mod-php"
+PHP_PACKAGES="php php-common php-cli php-mysql php-xml php-xmlrpc php-curl php-json php-gd php-imagick php-dev php-imap php-mbstring php-opcache php-soap php-zip php-intl"
+MYSQL_REPOSITOTY="https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb"
+MYSQL_PACKAGE="mysql-server"
+MARIADB_PACKAGES="mariadb-server"
+
+# Text format
+RESET="\e[0m"
 NOCOLOR='\033[0m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
-APACHE_PACKAGES="apache2 libapache2-mod-php"
-PHP_PACKAGES="php php-common php-cli php-mysql php-xml php-xmlrpc php-curl php-json php-gd php-imagick php-dev php-imap php-mbstring php-opcache php-soap php-zip php-intl"
-MYSQL_PACKAGES=""
-MARIADB_PACKAGES="mariadb-server"
+GREEN="\033[32;40m"
+WHITE_ON_BLUE="\e[104;37m"
 
 #######################################
 # Show script usage.
@@ -24,24 +39,19 @@ usage() {
   echo "Options:"
   echo "  -h, --help: Display usage"
   echo "  -i, --install: Script installation"
+  echo "  -u, --uninstall: Script uninstallation"
 }
 
 #######################################
-# Header start & end script.
-# Arguments: "start" or "end"
-# Outputs: None
+# Title and info
+# Arguments: string
 #######################################
-header() {
-  case $1 in
-  "start")
-    echo -e "\n\n//////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
-    echo -e "////////// $(basename "$0") started... \\\\\\\\\\"
-    ;;
-  "end")
-    echo -e "\n\\\\\\\\\\ $(basename "$0") finished... //////////"
-    echo -e "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////\n\n"
-    ;;
-  esac
+title() {
+  echo -e "${WHITE_ON_BLUE}$1 ${RESET}"
+}
+
+info() {
+  echo -e "${BLUE}$1 ${RESET}"
 }
 
 #######################################
@@ -50,7 +60,7 @@ header() {
 # Outputs: None
 #######################################
 package_upgrade() {
-  echo -e "\n>>> Packages Update & Upgrade"
+  info "\n>>> Packages Update & Upgrade"
   sudo apt update && sudo apt upgrade -y
   return 0
 }
@@ -61,25 +71,27 @@ package_upgrade() {
 # Outputs: None
 #######################################
 apache_install() {
-  echo -e "\n>>> Apache2 installation."
-  echo -e "--> Installed packages: $APACHE_PACKAGES"
-  read -r -p "--> Continue ? [y/n]"
+  info "\n>>> Apache2 installation."
+  info "--> Installed packages: $APACHE_PACKAGES"
+  info "--> Continue ? [y/n] "
+  read -r
   case $REPLY in
-  [yY]) ;;
+  [yY])
+    # shellcheck disable=SC2086
+    sudo apt install $APACHE_PACKAGES
+    info "\n--> Enable Apache2"
+    sudo systemctl enable apache2
+    # sudo a2enmod rewrite
+    info "\n--> Restart Apache2"
+    sudo systemctl restart apache2
+    info "\n--> Status Apache2"
+    sudo systemctl status apache2
+    ;;
   [nN])
-    echo -e "--> Action canceled"
+    info "--> Aborded"
     return 1
     ;;
   esac
-  # shellcheck disable=SC2086
-  sudo apt install -y $APACHE_PACKAGES
-  echo -e "\n--> Enable Apache2"
-  sudo systemctl enable apache2
-  # sudo a2enmod rewrite
-  echo -e "\n--> Restart Apache2"
-  sudo systemctl restart apache2
-  echo -e "\n--> Status Apache2"
-  sudo systemctl status apache2
   return 0
 }
 
@@ -89,20 +101,66 @@ apache_install() {
 # Outputs: None
 #######################################
 php_install() {
-  echo -e "\n>>> PHP installation."
-  echo -e "--> Installed packages: $PHP_PACKAGES"
-  read -r -p "--> Continue ? [y/n]"
+  info "\n>>> PHP installation."
+  info "--> Installed packages: $PHP_PACKAGES"
+  info "--> Continue ? [y/n] "
+  read -r
   case $REPLY in
-  [yY]) ;;
+  [yY])
+    # shellcheck disable=SC2086
+    sudo apt install -y $PHP_PACKAGES
+    info "\n--> Version PHP"
+    sudo php --version
+    ;;
   [nN])
-    echo -e "--> Action canceled"
+    info "--> Aborded"
     return 1
     ;;
   esac
-  # shellcheck disable=SC2086
-  sudo apt install -y $PHP_PACKAGES
-  echo -e "\n--> Version PHP"
-  sudo php --version
+  return 0
+}
+
+#######################################
+# SQL DB install
+# Arguments: None
+# Outputs: None
+#######################################
+sql_install() {
+  info "\n>>> SQL Database installation."
+  info "--> Choice: MariaDB [1] / MySQL [2] ? "
+  read -r
+  case $REPLY in
+  [1])
+    info "--> MaraiDB installation:"
+    sudo apt install -y $MARIADB_PACKAGES
+    ;;
+  [2])
+    info "--> MySQL installation:"
+    info "--> Download & install MySQL APT repository from $MYSQL_REPOSITOTY"
+    wget -O /tmp/mysql-apt-config.deb $MYSQL_REPOSITOTY
+    sudo apt install -y /tmp/mysql-apt-config.deb
+    sudo apt update -y
+    info "--> Install $MYSQL_PACKAGE"
+    sudo apt install -y $MYSQL_PACKAGE
+    info "--> MySQL version:"
+    mysql -v
+    info "--> MySQL status:"
+    sudo systemctl status mysql
+    ;;
+  esac
+
+  info "\n--> Run mysql_secure_installation ? [y/n] "
+  read -r
+  case $REPLY in
+  [yY])
+    sudo mysql_secure_installation
+    ;;
+  [nN])
+    info "--> Aborded"
+    return 1
+    ;;
+  esac
+
   return 0
 }
 
@@ -112,17 +170,18 @@ php_install() {
 # Outputs: None
 #######################################
 lamp_uninstall() {
-  echo -e "\n>>> LAMP Uninstallation."
-  echo -e "--> Packages: $APACHE_PACKAGES $PHP_PACKAGES, will be removed."
-  read -p "--> Continue ? [y/n]"
+  info "\n>>> LAMP Uninstallation."
+  info "--> Packages: $APACHE_PACKAGES $PHP_PACKAGES $MYSQL_PACKAGE $MARIADB_PACKAGES, will be removed."
+  info "--> Continue ? [y/n] "
+  read -r
   case $REPLY in
   [yY]) ;;
   [nN])
-    echo -e "--> Action canceled"
+    info "--> Action canceled"
     return 1
     ;;
   esac
-  sudo apt remove -y $APACHE_PACKAGES $PHP_PACKAGES
+  sudo apt remove -y $APACHE_PACKAGES $PHP_PACKAGES $MYSQL_PACKAGE $MARIADB_PACKAGES
   sudo apt autoremove
   return 0
 }
@@ -133,19 +192,19 @@ lamp_uninstall() {
 # Outputs: None
 #######################################
 main() {
+  info "\n\n############################################"
+  info "######## $(basename "$0") started ##########"
+
   case "$1" in
   -i | --install)
-    header "start"
     package_upgrade
     apache_install
     php_install
-    header "end"
+    sql_install
     ;;
 
-  -r | --remove)
-    header "start"
+  -u | --uninstall)
     lamp_uninstall
-    header "end"
     ;;
 
   -h | --help)
@@ -156,5 +215,8 @@ main() {
     usage
     ;;
   esac
+  info "\n######## $(basename "$0") finished ##########"
+  info "############################################\n\n"
 }
+
 main "$*"
