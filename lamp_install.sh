@@ -147,6 +147,10 @@ sql_install() {
     info "\n--> MySQL status:"
     sudo systemctl status mysql
     ;;
+  [A])
+    info "--> Aborded"
+    return 1
+    ;;
   esac
 
   info "\n--> Run mysql_secure_installation ? [y/n] "
