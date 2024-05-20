@@ -1,13 +1,85 @@
 #!/usr/bin/env bash
 #
-# Phenates; v0.2
+# Phenates; v0.3
 # Postinstall script, configure bashrc file for user and root, install package.
 # Copy and unzip bash_script directory from github (wget https://github.com/phenates/bash_script/archive/refs/heads/master.zip)
 
 #Variables:
-BASHRC=".bashrc"
-HOME_BASHRC="$HOME/$BASHRC"
+ME=$(basename "$0")
+SCRIPT_DIR="https://github.com/phenates/bash_script/archive/refs/heads/master.zip"
 PACKAGES=("tree" "unzip")
+
+#######################################
+# Terminal output helpers
+#######################################
+
+# echo_header() outputs a title padded by =, in yellow.
+function echo_header() {
+  TITLE="$ME > $1"
+  NCOLS=$(tput cols)
+  NEQUALS=$(((NCOLS - ${#TITLE}) / 2 - 1))
+  echo ""
+  tput setaf 3 # 3 = yellow
+  COUNTER=0
+  while [ $COUNTER -lt "$NEQUALS" ]; do
+    printf '/'
+    ((COUNTER = COUNTER + 1))
+  done
+  printf " %s " "$TITLE"
+  COUNTER=0
+  while [ $COUNTER -lt "$NEQUALS" ]; do
+    printf '\'
+    ((COUNTER = COUNTER + 1))
+  done
+
+  tput sgr0 # reset terminal
+  echo
+}
+
+# echo_step() outputs a step collored in cyan, with newline.
+function echo_step() {
+  tput setaf 6 # 6 = cyan
+  echo ""
+  echo "$1"
+  tput sgr0 # reset terminal
+}
+
+# echo_step_info() outputs additional step info in cyan, with newline.
+function echo_step_info() {
+  tput setaf 6 # 6 = cyan
+  echo ""
+  echo "--> $1"
+  tput sgr0 # reset terminal
+}
+
+# echo_step_info() outputs additional step info in cyan, with newline.
+function echo_ask() {
+  tput setaf 6 # 6 = cyan
+  read -r -p "> $1 "
+  tput sgr0 # reset terminal
+}
+
+function echo_failure() {
+  local txt="${1:-}"
+  tput setaf 1 # 1 = red
+  echo -e " [ FAILED ] $txt"
+  tput sgr0 # reset terminal
+}
+
+# shellcheck disable=SC2120
+function echo_success() {
+  local txt="${1:-}"
+  tput setaf 2 # 2 = green
+  echo " [ OK ] $txt"
+  tput sgr0 # reset terminal
+}
+
+function echo_canceled() {
+  local txt="${1:-}"
+  tput setaf 3 # 3 = yellow
+  echo -e " [ CANCELED ] $txt"
+  tput sgr0 # reset terminal
+}
 
 #######################################
 # Show script usage.
@@ -15,152 +87,234 @@ PACKAGES=("tree" "unzip")
 # Outputs: None
 #######################################
 usage() {
-  echo "Usage: $(basename "$0") [OPTIONS]"
+  echo "post_install.sh usage: $ME [OPTIONS]"
   echo "Options:"
-  echo "  -i, --install: Install personal configuration"
-  echo "  -r, --remove: Remove personal configuration"
-  echo "  -h, --help: Display usage"
-}
-
-#######################################
-# Header start & end script.
-# Arguments: "start" or "end"
-# Outputs: None
-#######################################
-header() {
-  case $1 in
-  "start")
-    echo ""
-    echo ""
-    echo -e "//////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
-    echo -e "////////// $(basename "$0") started... \\\\\\\\\\"
-    ;;
-  "end")
-    echo -e "\\\\\\\\\\ $(basename "$0") finished... //////////"
-    echo -e "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////"
-    echo ""
-    echo ""
-    ;;
-  esac
+  echo "  --install: Install personal configuration"
+  echo "  --remove: Remove personal configuration"
+  echo "  --help: Display usage"
 }
 
 #######################################
 # Check if sudo.
-# Arguments: None
-# Outputs: None
 #######################################
-sudo_ceck() {
+sudo_check() {
+  echo_step "Checking sudo privileges"
+  # shellcheck disable=SC2034
+  # shellcheck disable=SC2155
   local temp
-  temp=$(sudo -v 2>&1)
+  temp=$(sudo -nv 2>&1)
   if [ $? != 0 ]; then
-    echo "User must be in the sudo group..."
-    echo "As root, install sudo package and/or add $USERNAME user in the sudo group:"
-    echo "[sudo adduser <username> sudo]"
-    exit
+    echo_failure "$ME should be run with sudo privileges.\n As root, install sudo package and/or add $USER user in the sudo group (command: sudo adduser <username> sudo)"
+    exit 1
+  fi
+
+}
+
+#######################################
+# Check if root or exit
+#######################################
+root_check() {
+  echo_step "Checking root privileges"
+  if [[ $(id -u) != 0 ]]; then
+    echo_failure "$ME should be run as root"
+    exit 1
   fi
 }
 
 #######################################
-# User prompt configuration, in .bashrc file.
-# Arguments: None
-# Outputs: None
+# User prompt .bashrc file configuration
 #######################################
 user_bashrc_conf() {
-  read -r -p ">>> Configuration of $USER .bashrc -> Continue [y]/[n] ?"
+  echo_step "Configuration of $USER .bashrc file:"
+  echo_ask "Continue [y]/[n] ?"
   case $REPLY in
-  [yY]) ;;
+  [yY])
+    # Test .bashrc or .bashrc.bak file exist
+    if [[ ! -f "$HOME/.bashrc" || -f "$HOME/.bashrc.bak" ]]; then
+      echo_failure "No .bashrc or existing .bashrc.bak file backup found in $HOME."
+      return 1
+    fi
+
+    # Backup previous .bashrc file
+    echo_step_info "Backup previous .bashrc file to $HOME/.bashrc.bak"
+    cp "$HOME/.bashrc" "$HOME/.bashrc.bak"
+    echo_success
+
+    # Update .bashrc file
+    echo_step_info "Updating current .bashrc file"
+    sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' "$HOME/.bashrc"
+    {
+      echo ""
+      echo ""
+      echo "# Custom part.:"
+      echo "export PATH='$HOME/bash_script:$PATH'"
+      echo "bind -s 'set completion-ignore-case on'"
+      # shellcheck disable=SC2028
+      echo 'PS1="\[\e[38;5;34m\]\u\[\e[38;5;244m\]@\[\e[38;5;214m\]\h \[\e[38;5;129m\]\w \[\033[0m\]$ "'
+      echo "alias ..='cd ..'"
+      echo "alias ll='ls -lah'"
+      echo "alias sys='systemctl'"
+    } >>"$HOME/.bashrc"
+    echo_success "!!! To update prompt, use command: 'source .bashrc' or reconnect user"
+    ;;
   [nN])
-    echo "--> Action canceled"
+    echo_canceled "by user"
     return 1
     ;;
   *)
-    echo "--> Please answer y or n."
+    echo_failure "Please answer y or n."
     return 1
     ;;
   esac
+}
 
-  # Test .bashrc or .bashrc.bak file exist
-  if [[ ! -f "$HOME_BASHRC" || -f "$HOME_BASHRC.bk" ]]; then
-    echo "--> No $BASHRC or existing backup found in $HOME."
+#######################################
+# root prompt .bashrc file configuration
+#######################################
+# function root_bashrc_conf() {
+#   echo_step "Configuration of root .bashrc file:"
+#   echo_ask "Continue [y]/[n] ?"
+#   case $REPLY in
+#   [yY])
+#     Test .bashrc or .bashrc.bak file exist
+#     if [[ ! -e "/root/.bashrc" || -e "/root/.bashrc.bak" ]]; then
+#       echo_failure "No .bashrc or existing .bashrc.bak backup file found in /root."
+#       return 1
+#     fi
+
+#     # Backup previous .bashrc file
+#     echo_step_info "Backup previous .bashrc file to /root/.bashrc.bak."
+#     cp "/root/.bashrc" "/root/.bashrc.bak"
+#     echo_success
+
+#     # Update .bashrc file
+#     echo_step_info "Updating current .bashrc file"
+#     {
+#       echo ""
+#       echo ""
+#       echo "# Custom part.:"
+#       # echo "export PATH='$HOME/bash_script:$PATH'"
+#       echo "force_color_prompt=yes"
+#       echo "bind -s 'set completion-ignore-case on'"
+#       # shellcheck disable=SC2028
+#       echo 'PS1="\[\e[38;5;160m\]\u\[\e[38;5;244m\]@\[\e[38;5;214m\]\h \[\e[38;5;129m\]\w \[\033[0m\]$ "'
+#       echo "alias ..='cd ..'"
+#       echo "alias ll='ls -lah'"
+#       echo "alias sys='systemctl'"
+#     } >>"$HOME/.bashrc"
+#     echo_success
+#   ;;
+#   [nN])
+#     echo_canceled "by user"
+#     return 1
+#     ;;
+#   *)
+#     echo_failure "Please answer y or n."
+#     return 1
+#     ;;
+#   esac
+# }
+
+#######################################
+# User .nanorc file configuration
+#######################################
+user_nano_conf() {
+  echo_step "Configuration of .nanorc file for $USER:"
+  echo_ask "Continue [y]/[n] ?"
+  case $REPLY in
+  [yY])
+    # Test .nanorc or .nanorc.bak file exist
+    if [[ -f "$HOME/.nanorc" ]]; then
+      echo_failure ".nanorc file already existing."
+      return 1
+    fi
+
+    # Create .nanorc file based on /etc/nanorc
+    echo_step_info "Create $HOME/.nanorc based on /etc/nanorc"
+    cp /etc/nanorc "$HOME/.nanorc"
+    echo_success
+
+    # Update .bashrc file
+    echo_step_info "Updating $HOME/.nanorc file"
+    sed -i 's/# set autoindent/set autoindent/g' "$HOME/.nanorc"
+    sed -i 's/# set indicator/set indicator/g' "$HOME/.nanorc"
+    sed -i 's/# set positionlog/set positionlog/g' "$HOME/.nanorc"
+    {
+      echo include "/usr/share/nano/*.nanorc"
+    } >>"$HOME/.nanorc"
+    echo_success
+    ;;
+  [nN])
+    echo_canceled "by user"
     return 1
-  fi
+    ;;
+  *)
+    echo_failure "Please answer y or n."
+    return 1
+    ;;
+  esac
+}
 
-  # Backup previous .bashrc file
-  echo "--> Backup previous $BASHRC to $HOME_BASHRC.bak."
-  cp "$HOME_BASHRC" "$HOME_BASHRC.bak"
-
-  # Update .bashrc file
-  echo "--> Updating current $BASHRC."
-  sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' "$HOME_BASHRC"
-  {
-    echo ""
-    echo ""
-    echo "# Custom part.:"
-    echo "export PATH='$HOME/bash_script:$PATH'"
-    #echo "set completion-ignore-case on"
-    echo "bind -s 'set completion-ignore-case on'"
-    # shellcheck disable=SC2028
-    echo 'PS1="\[\e[0;32m\]\u@\h\[\e[0;m\]:\[\e[1;35m\]\w\[\e[0;m\] \[\e[1;32m\] \$\[\e[0;m\] "'
-    echo "alias ..='cd ..'"
-    echo "alias ll='ls -lah'"
-    echo "alias sys='systemctl'"
-  } >>"$HOME_BASHRC"
-  echo "!!! To update prompt, use 'source $BASHRC'"
-  echo ""
+#######################################
+# Packages installation from $PACKAGES.
+#######################################
+package_inst() {
+  echo_step "Packages instalation:"
+  echo_ask "Continue [y]/[n] ?"
+  case $REPLY in
+  [yY])
+    echo_step_info "Package update"
+    sudo apt update -y
+    echo_step_info "Package upgrade"
+    sudo apt update -y
+    echo_step_info "Package installation"
+    for i in "${PACKAGES[@]}"; do
+      echo_step_info "$i install"
+      sudo apt install "$i" -y
+    done
+    ;;
+  [nN])
+    echo_canceled "by user"
+    return 1
+    ;;
+  *)
+    echo_failure "Please answer yes or no."
+    return 1
+    ;;
+  esac
 }
 
 #######################################
 # Import & copy some script.
-# Arguments: None
-# Outputs: None
 #######################################
-# script_install() {
-#   ASKING="Script utils installation"
-#   read -r -p ">>> $ASKING -> Continue [y]/[n] ?" yn
-#   case $yn in
-#   [yY]) ;;
-#   [nN])
-#     echo "--> $ASKING canceled"
-#     return 1
-#     ;;
-#   *)
-#     echo "Please answer yes or no."
-#     return 1
-#     ;;
-#   esac
-
-# }
-
-#######################################
-# Packages installation from $PACKAGES.
-# Arguments: None
-# Outputs: None
-#######################################
-package_inst() {
-  read -r -p ">>> Packages instalation -> Continue [y]/[n] ?"
+script_import() {
+  echo_step "Script import"
+  echo_ask "Continue [y]/[n] ?"
   case $REPLY in
-  [yY]) ;;
+  [yY])
+    # Test bash_script directory
+    if [[ -d "$HOME/bash_script" ]]; then
+      echo_failure "bash_script directory already existing."
+      return 1
+    fi
+
+    # import & copy bash_script directory
+    wget $SCRIPT_DIR -P /tmp
+    unzip /tmp/master.zip -d /tmp
+    cp -r /tmp/bash_script-master /$HOME/bash_script
+    rm -r /tmp/master.zip /tmp/bash_script-master
+    echo_success
+
+    ;;
   [nN])
-    echo "--> Packages instalation canceled"
+    echo_canceled "by user"
     return 1
     ;;
   *)
-    echo "Please answer yes or no."
+    echo_failure "Please answer y or n."
     return 1
     ;;
   esac
-
-  echo "--> Package update"
-  sudo apt update -y
-  echo ""
-  echo "--> Package upgrade"
-  sudo apt update -y
-  echo ""
-  for i in "${PACKAGES[@]}"; do
-    echo "--> Package $i install"
-    sudo apt install "$i" -y
-    echo ""
-  done
 }
 
 #######################################
@@ -169,21 +323,33 @@ package_inst() {
 # Outputs: None
 #######################################
 remove() {
-  if [[ -f "$HOME_BASHRC.bak" ]]; then
-    echo "--> $BASHRC restored"
-    cp -vf "$HOME_BASHRC.bak" "$HOME_BASHRC"
-    echo ""
-    echo "--> $HOME_BASHRC.bak deleted"
-    rm "$HOME_BASHRC.bak"
-    echo ""
+  echo_step "Restore .bashrc file"
+  if [[ -f "$HOME/.bashrc.bak" ]]; then
+    cp -vf "$HOME/.bashrc.bak" "$HOME/.bashrc"
+    rm "$HOME/.bashrc.bak"
+    echo_success
   else
-    echo "--> No $HOME_BASHRC.bak file found, $BASHRC restoration canceled"
+    echo_failure "No $HOME/.bashrc.bak file found, .bashrc restoration canceled"
   fi
+
+  if [[ -f "$HOME/.nanorc" ]]; then
+    echo_step "Restore nano configuration"
+    rm "$HOME/.nanorc"
+    echo_success
+  fi
+
   for i in "${PACKAGES[@]}"; do
-    echo "--> Package $i remove"
+    echo_step_info "Uninstall $i package"
     sudo apt remove "$i" -y
-    echo ""
+    echo_success
   done
+
+  if [[ -d "$HOME/bash_script" ]]; then
+    echo_step "Delete $HOME/bash_script directory"
+    rm -r "$HOME/bash_script"
+    echo_success
+  fi
+
 }
 
 #######################################
@@ -192,25 +358,34 @@ remove() {
 # Outputs: None
 #######################################
 main() {
+  echo_header $1
   case "$1" in
   -h | --help)
     usage
     ;;
   -i | --install)
-    header "start"
-    sudo_ceck
+    sudo_check
     user_bashrc_conf
+    # root_bashrc_conf
+    user_nano_conf
     package_inst
-    header "end"
+    script_import
     ;;
   -r | --remove)
-    header "start"
     remove
-    header "end"
+    ;;
+  -t)
+    echo_step "My step"
+    echo_step_info "My step info"
+    echo_success
+    echo "totto"
+    echo_failure
+    root_check
     ;;
   *)
     usage
     ;;
   esac
+  echo_header "END"
 }
 main "$*"

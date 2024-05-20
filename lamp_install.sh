@@ -43,13 +43,9 @@ usage() {
 }
 
 #######################################
-# Title and info
+# Print info
 # Arguments: string
 #######################################
-title() {
-  echo -e "${WHITE_ON_BLUE}$1 ${RESET}"
-}
-
 info() {
   echo -e "${BLUE}$1 ${RESET}"
 }
