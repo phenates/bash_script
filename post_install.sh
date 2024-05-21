@@ -7,7 +7,7 @@
 #Variables:
 ME=$(basename "$0")
 SCRIPT_DIR="https://github.com/phenates/bash_script/archive/refs/heads/master.zip"
-PACKAGES=("tree" "unzip")
+PACKAGES=("tree" "unzip" "git")
 
 #######################################
 # Terminal output helpers
@@ -83,8 +83,7 @@ function echo_canceled() {
 
 #######################################
 # Show script usage.
-# Arguments: Options (h,i,r)
-# Outputs: None
+# Arguments: Options
 #######################################
 usage() {
   echo "post_install.sh usage: $ME [OPTIONS]"
@@ -319,8 +318,6 @@ script_import() {
 
 #######################################
 # Uninstall script, remove packages & .bashrc modification.
-# Arguments: None
-# Outputs: None
 #######################################
 remove() {
   echo_step "Restore .bashrc file"
@@ -353,9 +350,7 @@ remove() {
 }
 
 #######################################
-# Main function.
-# Arguments: None
-# Outputs: None
+# Main function
 #######################################
 main() {
   echo_header $1
