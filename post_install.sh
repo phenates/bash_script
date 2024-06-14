@@ -3,12 +3,13 @@
 # Phenates; v0.4
 # Postinstall script, configure bashrc file for user and root, install package.
 # Copy and unzip bash_script directory from github (wget https://github.com/phenates/bash_script/archive/refs/heads/master.zip)
+#  sh -c "$(https://raw.githubusercontent.com/phenates/bash_script/master/post_install.sh)""
 
 #Variables:
 ME=$(basename "$0")
 SCRIPT_DIR="https://github.com/phenates/bash_script/archive/refs/heads/master.zip"
 CHEZMOI_GITHUB_URL="https://github.com/phenates/chezmoi.git"
-PACKAGES=("zsh" "exa" "tree" "unzip" "git")
+PACKAGES=("exa" "tree" "unzip" "git")
 
 #######################################
 # Terminal output helpers
@@ -272,6 +273,44 @@ package_inst() {
       echo_step_info "$i install"
       sudo apt install "$i" -y
     done
+    echo_success
+    ;;
+  [nN])
+    echo_canceled "by user"
+    return 1
+    ;;
+  *)
+    echo_failure "Please answer yes or no."
+    return 1
+    ;;
+  esac
+}
+
+#######################################
+# zsh shell and ohmyzsh installation.
+#######################################
+zsh_inst() {
+  echo_step "zsh & ohmyzsh installation:"
+  echo_ask "Continue [y]/[n] ?"
+  case $REPLY in
+  [yY])
+    if [[ ! $(zsh --version) ]]; then
+      echo_step_info "Install chezmoi package"
+      sudo apt install zsh
+      echo_success
+    else
+      echo_step_info "zsh already installed"
+    fi
+
+    if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+      echo_step_info "Install ohmyzsh"
+      sh -c "$(wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"
+      echo_success
+    else
+      echo_step_info "ohmyzsh already installed"
+    fi
+
+    echo_success
     ;;
   [nN])
     echo_canceled "by user"
@@ -402,6 +441,7 @@ main() {
     ;;
   -t)
     package_inst
+    zsh_inst
     dotfiles_inst
     ;;
   *)
