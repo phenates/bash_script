@@ -107,7 +107,7 @@ sudo_check() {
     echo_failure "$ME should be run with sudo privileges.\n As root, install sudo package and/or add $USER user in the sudo group (command: sudo adduser <username> sudo)"
     exit 1
   fi
-
+  echo_success
 }
 
 #######################################
@@ -119,6 +119,7 @@ root_check() {
     echo_failure "$ME should be run as root"
     exit 1
   fi
+  echo_success
 }
 
 #######################################
@@ -155,7 +156,7 @@ package_inst() {
 # zsh shell and ohmyzsh installation.
 #######################################
 zsh_inst() {
-  echo_step "zsh & oh-my-zsh installation:"
+  echo_step "Zsh shell & oh-my-zsh plugin installation:"
   echo_ask "Continue [y]/[n] ?"
   case $REPLY in
   [yY])
@@ -180,7 +181,6 @@ zsh_inst() {
     if [[ $REPLY == [yY] ]]; then
       chsh -s $(which zsh)
     fi
-
     echo_success
     ;;
   [nN])
