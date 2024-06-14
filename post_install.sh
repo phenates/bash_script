@@ -288,18 +288,20 @@ package_inst() {
 # Dotfiles management with chezmoi package.
 #######################################
 dotfiles_inst() {
-  echo_step "Dotfiles management by chezmoi:"
+  echo_step "Dotfiles management with chezmoi package:"
   echo_ask "Continue [y]/[n] ?"
   case $REPLY in
   [yY])
     if [[ $(apt-cache show chezmoi) != 0 ]]; then
       echo_step_info "Install chezmoi package"
-      wget -qO- get.chezmoi.io
+      sh -c "$(wget -qO- get.chezmoi.io)"
+      echo_success
     else
       echo_step_info "chezmoi already installed"
     fi
     echo_step_info "chezmoi init and apply dotfiles configurations"
     chezmoi init --apply ${CHEZMOI_GITHUB_URL}
+    echo_success
     ;;
   [nN])
     echo_canceled "by user"
@@ -399,6 +401,7 @@ main() {
     remove
     ;;
   -t)
+    package_inst
     dotfiles_inst
     ;;
   *)
