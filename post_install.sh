@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
-# Phenates; v0.3
+# Phenates; v0.4
 # Postinstall script, configure bashrc file for user and root, install package.
 # Copy and unzip bash_script directory from github (wget https://github.com/phenates/bash_script/archive/refs/heads/master.zip)
 
 #Variables:
 ME=$(basename "$0")
 SCRIPT_DIR="https://github.com/phenates/bash_script/archive/refs/heads/master.zip"
-PACKAGES=("tree" "unzip" "git")
+CHEZMOI_GITHUB_URL="https://github.com/phenates/chezmoi.git"
+PACKAGES=("zsh" "exa" "tree" "unzip" "git")
 
 #######################################
 # Terminal output helpers
@@ -284,6 +285,34 @@ package_inst() {
 }
 
 #######################################
+# Dotfiles management with chezmoi package.
+#######################################
+dotfiles_inst() {
+  echo_step "Dotfiles management by chezmoi:"
+  echo_ask "Continue [y]/[n] ?"
+  case $REPLY in
+  [yY])
+    if [[ $(apt-cache show chezmoi != 0)]]; then
+      echo_step_info "Install chezmoi package"
+      wget -qO- get.chezmoi.io
+    else
+      echo_step_info "chezmoi already installed"
+    fi
+    echo_step_info "chezmoi init and apply dotfiles configurations"
+    chezmoi init --apply ${CHEZMOI_GITHUB_URL}
+    ;;
+  [nN])
+    echo_canceled "by user"
+    return 1
+    ;;
+  *)
+    echo_failure "Please answer yes or no."
+    return 1
+    ;;
+  esac
+}
+
+#######################################
 # Import & copy some script.
 #######################################
 script_import() {
@@ -370,12 +399,7 @@ main() {
     remove
     ;;
   -t)
-    echo_step "My step"
-    echo_step_info "My step info"
-    echo_success
-    echo "totto"
-    echo_failure
-    root_check
+    dotfiles_inst
     ;;
   *)
     usage
