@@ -3,7 +3,7 @@
 # Phenates; v0.4
 # Postinstall script, configure bashrc file for user and root, install package.
 # Copy and unzip bash_script directory from github (wget https://github.com/phenates/bash_script/archive/refs/heads/master.zip)
-#  sh -c "$(https://raw.githubusercontent.com/phenates/bash_script/master/post_install.sh)""
+#  sh -c "$(https://raw.githubusercontent.com/phenates/bash_script/master/post_install.sh)"
 
 #Variables:
 ME=$(basename "$0")
@@ -296,18 +296,24 @@ zsh_inst() {
   [yY])
     if [[ ! $(zsh --version) ]]; then
       echo_step_info "Install chezmoi package"
-      sudo apt install zsh
+      sudo apt install zsh fonts-powerline
       echo_success
     else
       echo_step_info "zsh already installed"
+      echo_success
     fi
 
     if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
       echo_step_info "Install ohmyzsh"
-      sh -c "$(wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"
+      sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
       echo_success
     else
       echo_step_info "ohmyzsh already installed"
+    fi
+
+    echo_ask "Change your default shell to zsh? [Y/n]"
+    if [[ $REPLY == [yY] ]]; then
+      chsh -s $(which zsh)
     fi
 
     echo_success
