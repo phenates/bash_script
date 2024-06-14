@@ -292,7 +292,7 @@ dotfiles_inst() {
   echo_ask "Continue [y]/[n] ?"
   case $REPLY in
   [yY])
-    if [[ $(apt-cache show chezmoi != 0)]]; then
+    if [[ $(apt-cache show chezmoi) != 0 ]]; then
       echo_step_info "Install chezmoi package"
       wget -qO- get.chezmoi.io
     else
