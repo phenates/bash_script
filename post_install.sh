@@ -3,7 +3,7 @@
 # Phenates; v0.4
 # Postinstall script, configure bashrc file for user and root, install package.
 # Copy and unzip bash_script directory from github (wget https://github.com/phenates/bash_script/archive/refs/heads/master.zip)
-#  sh -c "$(https://raw.githubusercontent.com/phenates/bash_script/master/post_install.sh)"
+#  sh -c "$(wget https://raw.githubusercontent.com/phenates/bash_script/master/post_install.sh)"
 
 #Variables:
 ME=$(basename "$0")
