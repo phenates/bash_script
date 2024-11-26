@@ -19,8 +19,8 @@ ARG_1=${1:-"default"}
 
 ## Log (add "| tee -a "$LOG_FILE" >&2" to into a file):
 readonly LOG_FILE="/tmp/$(basename "$0").log"
-info() { echo -e "\033[0;34m[INFO]    $*"; }
-warning() { echo -e "[WARNING] $*"; }
+info() { echo -e "\033[0;36m[INFO]    $*"; }
+warning() { echo -e "\033[1;33m[WARNING] $*"; }
 error() { echo -e "\033[0;31m[ERROR]   $*"; }
 
 ## Functions:
@@ -31,7 +31,7 @@ my_function() {
 ## Main
 main() {
   case "$ARG_1" in
-  -h | --help)
+  -x | --xxx)
     # Script goes here
     ;;
 
